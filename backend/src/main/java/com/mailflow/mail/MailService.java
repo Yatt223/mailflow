@@ -133,4 +133,11 @@ public class MailService {
     private static String echapper(String s) {
         return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
-}
+
+    @Transactional(readOnly = true)
+    public boolean peutVoir(Acteur a, UUID mailId) {
+        return mails.findByIdAndOrganisationId(mailId, a.organisationId())
+                .filter(m -> a.role() != Role.AGENT || m.getAssigneA() == null
+                        || a.id().equals(m.getAssigneA()))
+                .isPresent();
+    }}

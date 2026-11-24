@@ -41,6 +41,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/mails").hasAnyRole("ADMIN", "MANAGER", "AGENT")
                         .requestMatchers(HttpMethod.PUT, "/api/mails/*/assignation").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/mails/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/fichiers", "/api/mails/*/fichiers").hasAnyRole("ADMIN", "MANAGER", "AGENT")
+                        .requestMatchers(HttpMethod.PUT, "/api/fichiers/*/contenu").hasAnyRole("ADMIN", "MANAGER", "AGENT")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtConverter)));
         return http.build();
