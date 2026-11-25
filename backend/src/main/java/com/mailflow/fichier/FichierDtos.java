@@ -19,14 +19,14 @@ public final class FichierDtos {
 
     public record RenommageRequest(@NotBlank @Size(max = 255) String nom) {}
 
-    public record PartageRequest(@NotNull UUID utilisateurId, @NotNull Droit droit,
-                                 Instant expireLe) {}
+    public record PartageRequest(UUID utilisateurId, UUID equipeId,
+                                 @NotNull Droit droit, Instant expireLe) {}
 
-    public record PartageResponse(UUID id, UUID utilisateurId, Droit droit,
+    public record PartageResponse(UUID id, UUID utilisateurId, UUID equipeId, Droit droit,
                                   Instant expireLe, Instant creeLe) {
         public static PartageResponse from(Partage p) {
-            return new PartageResponse(p.getId(), p.getUtilisateurId(), p.getDroit(),
-                    p.getExpireLe(), p.getCreeLe());
+            return new PartageResponse(p.getId(), p.getUtilisateurId(), p.getEquipeId(),
+                    p.getDroit(), p.getExpireLe(), p.getCreeLe());
         }
     }
 }

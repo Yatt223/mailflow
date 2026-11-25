@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/liens/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/utilisateurs").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.POST, "/api/utilisateurs").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/mails").hasAnyRole("ADMIN", "MANAGER", "AGENT")
@@ -43,6 +44,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/mails/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/fichiers", "/api/mails/*/fichiers").hasAnyRole("ADMIN", "MANAGER", "AGENT")
                         .requestMatchers(HttpMethod.PUT, "/api/fichiers/*/contenu").hasAnyRole("ADMIN", "MANAGER", "AGENT")
+                        .requestMatchers(HttpMethod.POST, "/api/equipes").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/equipes/*").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/equipes/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/equipes/*/membres/*").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/equipes/*/membres/*").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtConverter)));
         return http.build();

@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import com.mailflow.equipe.Equipe;
+import com.mailflow.equipe.EquipeRepository;
 
 @Slf4j
 @Service
@@ -31,6 +33,7 @@ public class FichierService {
     private final UtilisateurRepository utilisateurs;
     private final StockageFichiers stockage;
     private final MailService mailService;
+    private final EquipeRepository equipes;
 
     public record Telechargement(Fichier fichier, InputStream contenu) {}
 
@@ -39,9 +42,11 @@ public class FichierService {
     private Droit droitSur(Acteur a, Fichier f) {
         if (f.getProprietaireId().equals(a.id())) return Droit.PROPRIETAIRE;
         Droit droit = Droit.AUCUN;
-        for (Partage p : partages.actifs(f.getId(), a.id(), Instant.now())) {
+        for (Partage p : partages.actifsPourUtilisateur(f.getId(), a.id(), Instant.now())) {
             if (p.getDroit().ordinal() > droit.ordinal()) droit = p.getDroit();
         }
+        // un auditeur reste en lecture seule, même via une équipe
+        if (a.role() == Role.AUDITEUR && droit == Droit.MODIFICATION) droit = Droit.LECTURE;
         if (droit == Droit.AUCUN && f.getMailId() != null
                 && mailService.peutVoir(a, f.getMailId())) {
             droit = Droit.LECTURE;
@@ -166,31 +171,48 @@ public class FichierService {
     // ---------- Partage ----------
 
     @Transactional
-    public Partage partager(Acteur a, UUID fichierId, UUID utilisateurId,
+    public Partage partager(Acteur a, UUID fichierId, UUID utilisateurId, UUID equipeId,
                             Droit droit, Instant expireLe) {
         Fichier f = charger(a, fichierId, Droit.PROPRIETAIRE);
+        if ((utilisateurId == null) == (equipeId == null)) {
+            throw invalide("Indiquez un utilisateur OU une équipe");
+        }
         if (droit != Droit.LECTURE && droit != Droit.MODIFICATION) {
             throw invalide("Droit de partage : LECTURE ou MODIFICATION");
         }
         if (expireLe != null && !expireLe.isAfter(Instant.now())) {
             throw invalide("La date d'expiration est déjà passée");
         }
-        Utilisateur cible = utilisateurs.findById(utilisateurId)
-                .filter(u -> u.getOrganisationId().equals(a.organisationId()))
-                .filter(Utilisateur::isActif)
-                .orElseThrow(() -> invalide("Utilisateur invalide"));
-        if (cible.getId().equals(a.id())) {
-            throw invalide("Vous êtes déjà propriétaire de ce fichier");
-        }
-        if (cible.getRole() == Role.AUDITEUR && droit == Droit.MODIFICATION) {
-            throw invalide("Un auditeur est en lecture seule");
-        }
-        Partage p = partages.findByFichierIdAndUtilisateurId(f.getId(), cible.getId())
-                .orElseGet(Partage::new);
-        if (p.getId() == null) {
-            p.setFichierId(f.getId());
-            p.setUtilisateurId(cible.getId());
-            p.setCreePar(a.id());
+
+        Partage p;
+        if (utilisateurId != null) {
+            Utilisateur cible = utilisateurs.findById(utilisateurId)
+                    .filter(u -> u.getOrganisationId().equals(a.organisationId()))
+                    .filter(Utilisateur::isActif)
+                    .orElseThrow(() -> invalide("Utilisateur invalide"));
+            if (cible.getId().equals(a.id())) {
+                throw invalide("Vous êtes déjà propriétaire de ce fichier");
+            }
+            if (cible.getRole() == Role.AUDITEUR && droit == Droit.MODIFICATION) {
+                throw invalide("Un auditeur est en lecture seule");
+            }
+            p = partages.findByFichierIdAndUtilisateurId(f.getId(), cible.getId())
+                    .orElseGet(Partage::new);
+            if (p.getId() == null) {
+                p.setFichierId(f.getId());
+                p.setUtilisateurId(cible.getId());
+                p.setCreePar(a.id());
+            }
+        } else {
+            Equipe equipe = equipes.findByIdAndOrganisationId(equipeId, a.organisationId())
+                    .orElseThrow(() -> invalide("Équipe invalide"));
+            p = partages.findByFichierIdAndEquipeId(f.getId(), equipe.getId())
+                    .orElseGet(Partage::new);
+            if (p.getId() == null) {
+                p.setFichierId(f.getId());
+                p.setEquipeId(equipe.getId());
+                p.setCreePar(a.id());
+            }
         }
         p.setDroit(droit);
         p.setExpireLe(expireLe);
@@ -199,6 +221,9 @@ public class FichierService {
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Partage déjà existant");
         }
+    }
+    public Fichier chargerProprietaire(Acteur a, UUID id) {
+        return charger(a, id, Droit.PROPRIETAIRE);
     }
 
     @Transactional(readOnly = true)

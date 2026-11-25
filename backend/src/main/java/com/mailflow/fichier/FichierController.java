@@ -102,7 +102,7 @@ public class FichierController {
     public PartageResponse partager(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                     @Valid @RequestBody PartageRequest req) {
         return PartageResponse.from(service.partager(Acteur.de(jwt), id,
-                req.utilisateurId(), req.droit(), req.expireLe()));
+                req.utilisateurId(), req.equipeId(), req.droit(), req.expireLe()));
     }
 
     @DeleteMapping("/fichiers/{id}/partages/{partageId}")

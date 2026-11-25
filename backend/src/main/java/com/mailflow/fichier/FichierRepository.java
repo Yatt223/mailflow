@@ -21,8 +21,10 @@ public interface FichierRepository extends JpaRepository<Fichier, UUID> {
     Page<Fichier> mesFichiers(@Param("org") UUID org, @Param("uid") UUID uid, Pageable pageable);
 
     @Query("select f from Fichier f where f.organisationId = :org and f.id in "
-            + "(select p.fichierId from Partage p where p.utilisateurId = :uid "
-            + "and (p.expireLe is null or p.expireLe > :maintenant))")
+            + "(select p.fichierId from Partage p "
+            + "where (p.expireLe is null or p.expireLe > :maintenant) "
+            + "and (p.utilisateurId = :uid or p.equipeId in "
+            + "(select m.id.equipeId from EquipeMembre m where m.id.utilisateurId = :uid)))")
     Page<Fichier> partagesAvec(@Param("org") UUID org, @Param("uid") UUID uid,
                                @Param("maintenant") Instant maintenant, Pageable pageable);
 }

@@ -1,17 +1,23 @@
+
 package com.mailflow.fichier;
 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "partage")
-@Getter @Setter @NoArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
 public class Partage {
-    @Id @GeneratedValue(strategy = GenerationType.UUID)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Column(name = "fichier_id", nullable = false)
@@ -19,6 +25,9 @@ public class Partage {
 
     @Column(name = "utilisateur_id")
     private UUID utilisateurId;
+
+    @Column(name = "equipe_id")
+    private UUID equipeId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
