@@ -1,5 +1,6 @@
 package com.mailflow.auth;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -13,12 +14,14 @@ public class AuthController {
 
     @PostMapping("/inscription")
     @ResponseStatus(HttpStatus.CREATED)
-    public TokenResponse inscription(@Valid @RequestBody InscriptionRequest req) {
-        return service.inscrire(req);
+    public TokenResponse inscription(@Valid @RequestBody InscriptionRequest req,
+                                     HttpServletRequest http) {
+        return service.inscrire(req, http.getRemoteAddr());
     }
 
     @PostMapping("/connexion")
-    public TokenResponse connexion(@Valid @RequestBody ConnexionRequest req) {
-        return service.connecter(req);
+    public TokenResponse connexion(@Valid @RequestBody ConnexionRequest req,
+                                   HttpServletRequest http) {
+        return service.connecter(req, http.getRemoteAddr());
     }
 }

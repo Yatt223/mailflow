@@ -17,7 +17,7 @@ public class Fichier {
     @Column(name = "organisation_id", nullable = false)
     private UUID organisationId;
 
-    @Column(name = "proprietaire_id", nullable = false)
+    @Column(name = "proprietaire_id")
     private UUID proprietaireId;
 
     @Column(name = "mail_id")

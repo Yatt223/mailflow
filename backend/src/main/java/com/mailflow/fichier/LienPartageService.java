@@ -1,6 +1,8 @@
 package com.mailflow.fichier;
 
 import com.mailflow.auth.Acteur;
+import com.mailflow.audit.AuditService;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -34,6 +36,7 @@ public class LienPartageService {
     private final FichierRepository fichiers;
     private final FichierService fichierService;
     private final StockageFichiers stockage;
+    private final AuditService audit;
 
     public record LienCree(LienPartage lien, String jeton) {}
 
@@ -79,7 +82,7 @@ public class LienPartageService {
 
     // Accès public : aucune authentification. Tout échec renvoie le même 404.
     @Transactional
-    public FichierService.Telechargement telecharger(String jeton) {
+    public FichierService.Telechargement telecharger(String jeton, String ip) {
         if (jeton == null || !FORMAT_JETON.matcher(jeton).matches()) throw introuvable();
         String hash = hacher(jeton);
         if (liens.consommer(hash, Instant.now()) == 0) throw introuvable();
@@ -89,6 +92,8 @@ public class LienPartageService {
         try {
             InputStream contenu = stockage.lire(f.getCleStockage());
             log.info("Téléchargement par lien {} du fichier {}", l.getId(), f.getId());
+            audit.enregistrer(f.getOrganisationId(), null, "LIEN_UTILISE", "FICHIER", f.getId(),
+                    Map.of("lienId", l.getId().toString(), "ip", String.valueOf(ip)));
             return new FichierService.Telechargement(f, contenu);
         } catch (IOException e) {
             log.error("Contenu introuvable pour le fichier {}", f.getId(), e);

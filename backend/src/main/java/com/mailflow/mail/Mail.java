@@ -44,6 +44,18 @@ public class Mail {
     @Column(name = "assigne_a")
     private UUID assigneA;
 
+    @Column(name = "boite_mail_id")
+    private UUID boiteMailId;
+
+    @Column(nullable = false)
+    private String direction = "ENTRANT";
+
+    @Column(name = "imap_uid")
+    private Long imapUid;
+
+    @Column(name = "pieces_ignorees", nullable = false)
+    private int piecesIgnorees;
+
     @Column(name = "recu_le", nullable = false)
     private Instant recuLe = Instant.now();
 

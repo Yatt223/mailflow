@@ -35,6 +35,7 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/health", "/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/liens/*").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/utilisateurs").hasAnyRole("ADMIN", "MANAGER")
@@ -49,6 +50,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/equipes/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/equipes/*/membres/*").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.DELETE, "/api/equipes/*/membres/*").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/boites-mail").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/boites-mail", "/api/boites-mail/*").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/boites-mail/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/boites-mail/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/boites-mail/*/synchroniser").hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.POST, "/api/boites-mail/*/resynchroniser").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/audit").hasAnyRole("ADMIN", "AUDITEUR")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtConverter)));
         return http.build();

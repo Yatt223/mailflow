@@ -1,5 +1,6 @@
 package com.mailflow.utilisateur;
 
+import com.mailflow.audit.Audit;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -36,6 +37,7 @@ public class UtilisateurController {
     @PostMapping("/utilisateurs")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasRole('ADMIN')")
+    @Audit(action = "UTILISATEUR_CREE", type = "EQUIPE")
     public UtilisateurResponse creer(@AuthenticationPrincipal Jwt jwt,
                                      @Valid @RequestBody CreationUtilisateurRequest req) {
         UUID orgId = UUID.fromString(jwt.getClaimAsString("org"));

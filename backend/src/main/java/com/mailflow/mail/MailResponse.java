@@ -7,12 +7,14 @@ import java.util.UUID;
 
 public record MailResponse(UUID id, String expediteur, List<String> destinataires,
                            List<String> copie, String objet, String corps,
-                           StatutMail statut, UUID assigneA, Instant recuLe, Instant creeLe) {
+                           StatutMail statut, UUID assigneA, Instant recuLe, Instant creeLe,
+                           String direction, int piecesIgnorees) {
 
     public static MailResponse from(Mail m) {
         return new MailResponse(m.getId(), m.getExpediteur(), separer(m.getDestinataires()),
                 separer(m.getCopie()), m.getObjet(), m.getCorps(), m.getStatut(),
-                m.getAssigneA(), m.getRecuLe(), m.getCreeLe());
+                m.getAssigneA(), m.getRecuLe(), m.getCreeLe(),
+                m.getDirection(), m.getPiecesIgnorees());
     }
 
     private static List<String> separer(String valeur) {

@@ -14,4 +14,5 @@ public interface MailRepository extends JpaRepository<Mail, UUID>, JpaSpecificat
     @Query("update Mail m set m.assigneA = :uid "
             + "where m.id = :id and m.organisationId = :org and m.assigneA is null")
     int prendreSiLibre(@Param("id") UUID id, @Param("org") UUID org, @Param("uid") UUID uid);
+    boolean existsByBoiteMailIdAndMessageId(UUID boiteMailId, String messageId);
 }

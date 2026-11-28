@@ -13,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
+import com.mailflow.audit.Audit;
 
 @RestController
 @RequestMapping("/api/mails")
@@ -23,6 +24,7 @@ public class MailController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','AGENT')")
+    @Audit(action = "MAIL_CREE", type = "MAIL")
     public MailResponse creer(@AuthenticationPrincipal Jwt jwt,
                               @Valid @RequestBody CreationMailRequest req) {
         return MailResponse.from(service.creer(Acteur.de(jwt), req));
@@ -45,12 +47,14 @@ public class MailController {
     }
 
     @GetMapping("/{id}")
+    @Audit(action = "MAIL_LU", type = "MAIL")
     public MailResponse lire(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return MailResponse.from(service.lire(Acteur.de(jwt), id));
     }
 
     @PatchMapping("/{id}/statut")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','AGENT')")
+    @Audit(action = "MAIL_STATUT_CHANGE", type = "MAIL")
     public MailResponse changerStatut(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                       @Valid @RequestBody ChangementStatutRequest req) {
         return MailResponse.from(service.changerStatut(Acteur.de(jwt), id, req.statut()));
@@ -58,6 +62,7 @@ public class MailController {
 
     @PutMapping("/{id}/assignation")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+    @Audit(action = "MAIL_ASSIGNE", type = "MAIL")
     public MailResponse assigner(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                  @Valid @RequestBody AssignationRequest req) {
         return MailResponse.from(service.assigner(Acteur.de(jwt), id, req.utilisateurId()));
@@ -65,6 +70,7 @@ public class MailController {
 
     @PostMapping("/{id}/prendre")
     @PreAuthorize("hasAnyRole('ADMIN','MANAGER','AGENT')")
+    @Audit(action = "MAIL_PRIS", type = "MAIL")
     public MailResponse prendre(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         return MailResponse.from(service.prendre(Acteur.de(jwt), id));
     }
@@ -72,6 +78,7 @@ public class MailController {
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasRole('ADMIN')")
+    @Audit(action = "MAIL_SUPPRIME", type = "MAIL")
     public void supprimer(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         service.supprimer(Acteur.de(jwt), id);
     }

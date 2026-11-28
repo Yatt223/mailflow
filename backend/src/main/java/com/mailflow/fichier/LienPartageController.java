@@ -1,5 +1,7 @@
 package com.mailflow.fichier;
 
+import com.mailflow.audit.Audit;
+import jakarta.servlet.http.HttpServletRequest;
 import com.mailflow.auth.Acteur;
 import com.mailflow.fichier.LienDtos.*;
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ public class LienPartageController {
 
     @PostMapping("/fichiers/{id}/liens")
     @ResponseStatus(HttpStatus.CREATED)
+    @Audit(action = "LIEN_CREE", type = "FICHIER")
     public LienCreeResponse creer(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                   @Valid @RequestBody(required = false) CreationLienRequest req) {
         Integer duree = req == null ? null : req.dureeHeures();
@@ -38,6 +41,7 @@ public class LienPartageController {
 
     @DeleteMapping("/fichiers/{id}/liens/{lienId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Audit(action = "LIEN_REVOQUE", type = "FICHIER")
     public void revoquer(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                          @PathVariable UUID lienId) {
         service.revoquer(Acteur.de(jwt), id, lienId);
@@ -45,8 +49,9 @@ public class LienPartageController {
 
     // Public : téléchargement par lien
     @GetMapping("/liens/{jeton}")
-    public ResponseEntity<InputStreamResource> telecharger(@PathVariable String jeton) {
-        var t = service.telecharger(jeton);
+    public ResponseEntity<InputStreamResource> telecharger(@PathVariable String jeton,
+                                                           HttpServletRequest http) {
+        var t = service.telecharger(jeton, http.getRemoteAddr());
         return ResponseEntity.ok()
                 .cacheControl(CacheControl.noStore())
                 .contentType(MediaType.parseMediaType(t.fichier().getTypeMime()))

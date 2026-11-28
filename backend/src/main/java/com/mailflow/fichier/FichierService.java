@@ -23,6 +23,10 @@ import java.util.List;
 import java.util.UUID;
 import com.mailflow.equipe.Equipe;
 import com.mailflow.equipe.EquipeRepository;
+import java.io.ByteArrayInputStream;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -40,7 +44,7 @@ public class FichierService {
     // ---------- Droits ----------
 
     private Droit droitSur(Acteur a, Fichier f) {
-        if (f.getProprietaireId().equals(a.id())) return Droit.PROPRIETAIRE;
+        if (a.id().equals(f.getProprietaireId())) return Droit.PROPRIETAIRE;
         Droit droit = Droit.AUCUN;
         for (Partage p : partages.actifsPourUtilisateur(f.getId(), a.id(), Instant.now())) {
             if (p.getDroit().ordinal() > droit.ordinal()) droit = p.getDroit();
@@ -52,6 +56,41 @@ public class FichierService {
             droit = Droit.LECTURE;
         }
         return droit;
+    }
+
+    /** Pièce jointe d'un mail reçu : sans propriétaire, lisible par ceux qui voient le mail. */
+    public Optional<Fichier> enregistrerPieceJointeEntrante(UUID organisationId, UUID mailId,
+                                                            String nomBrut, byte[] contenu) {
+        if (contenu.length == 0) return Optional.empty();
+        String nom;
+        Type type;
+        try {
+            nom = TypesAutorises.nettoyerNom(nomBrut);
+            type = TypesAutorises.verifier(TypesAutorises.extension(nom),
+                    Arrays.copyOf(contenu, Math.min(contenu.length, 8)));
+        } catch (ResponseStatusException e) {
+            return Optional.empty(); // type ou contenu non autorisé
+        }
+        String cle = organisationId + "/" + UUID.randomUUID();
+        try (InputStream in = new ByteArrayInputStream(contenu)) {
+            stockage.ecrire(cle, in);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        try {
+            Fichier f = new Fichier();
+            f.setOrganisationId(organisationId);
+            f.setProprietaireId(null);
+            f.setMailId(mailId);
+            f.setNom(nom);
+            f.setTypeMime(type.mime());
+            f.setTailleOctets(contenu.length);
+            f.setCleStockage(cle);
+            return Optional.of(fichiers.saveAndFlush(f));
+        } catch (RuntimeException e) {
+            supprimerSilencieusement(cle);
+            throw e;
+        }
     }
 
     // 404 si aucun accès (on ne révèle pas l'existence), 403 si droit insuffisant

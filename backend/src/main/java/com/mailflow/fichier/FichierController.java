@@ -1,5 +1,6 @@
 package com.mailflow.fichier;
 
+import com.mailflow.audit.Audit;
 import com.mailflow.auth.Acteur;
 import com.mailflow.fichier.FichierDtos.*;
 import jakarta.validation.Valid;
@@ -30,6 +31,7 @@ public class FichierController {
     @PostMapping(path = "/fichiers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize(ECRIVAINS)
+    @Audit(action = "FICHIER_TELEVERSE", type = "FICHIE")
     public FichierResponse televerser(@AuthenticationPrincipal Jwt jwt,
                                       @RequestParam("fichier") MultipartFile fichier) {
         return FichierResponse.from(service.televerser(Acteur.de(jwt), fichier, null));
@@ -57,6 +59,7 @@ public class FichierController {
     }
 
     @GetMapping("/fichiers/{id}/contenu")
+    @Audit(action = "FICHIER_TELECHARGE", type = "FICHIE")
     public ResponseEntity<InputStreamResource> telecharger(@AuthenticationPrincipal Jwt jwt,
                                                            @PathVariable UUID id) {
         var t = service.telecharger(Acteur.de(jwt), id);
@@ -72,12 +75,14 @@ public class FichierController {
 
     @PutMapping(path = "/fichiers/{id}/contenu", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize(ECRIVAINS)
+    @Audit(action = "FICHIER_REMPLACE", type = "FICHIE")
     public FichierResponse remplacer(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                      @RequestParam("fichier") MultipartFile fichier) {
         return FichierResponse.from(service.remplacer(Acteur.de(jwt), id, fichier));
     }
 
     @PatchMapping("/fichiers/{id}")
+    @Audit(action = "FICHIER_RENOMME", type = "FICHIE")
     public FichierResponse renommer(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                     @Valid @RequestBody RenommageRequest req) {
         return FichierResponse.from(service.renommer(Acteur.de(jwt), id, req.nom()));
@@ -85,6 +90,7 @@ public class FichierController {
 
     @DeleteMapping("/fichiers/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Audit(action = "FICHIER_SUPPRIME", type = "FICHIE")
     public void supprimer(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
         service.supprimer(Acteur.de(jwt), id);
     }
@@ -99,6 +105,7 @@ public class FichierController {
 
     @PostMapping("/fichiers/{id}/partages")
     @ResponseStatus(HttpStatus.CREATED)
+    @Audit(action = "FICHIER_PARTAGE", type = "FICHIE")
     public PartageResponse partager(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                     @Valid @RequestBody PartageRequest req) {
         return PartageResponse.from(service.partager(Acteur.de(jwt), id,
@@ -107,6 +114,7 @@ public class FichierController {
 
     @DeleteMapping("/fichiers/{id}/partages/{partageId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Audit(action = "FICHIER_PARTAGE_RETIRE", type = "FICHIE")
     public void retirerPartage(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
                                @PathVariable UUID partageId) {
         service.retirerPartage(Acteur.de(jwt), id, partageId);
@@ -117,6 +125,7 @@ public class FichierController {
     @PostMapping(path = "/mails/{mailId}/fichiers", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize(ECRIVAINS)
+    @Audit(action = "PIECE_JOINTE_AJOUTEE", type = "FICHIE")
     public FichierResponse joindre(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID mailId,
                                    @RequestParam("fichier") MultipartFile fichier) {
         return FichierResponse.from(service.televerser(Acteur.de(jwt), fichier, mailId));
